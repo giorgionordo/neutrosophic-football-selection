@@ -1,4 +1,10 @@
-"""Automated tests for the neutrosophic football-selection framework."""
+"""
+Automated tests for the neutrosophic football-selection framework.
+
+----------------------------------------------------------------------------------
+author: Giorgio Nordo - Dipartimento MIFT. Università di Messina, Italy
+www.nordo.it   |  giorgio.nordo@unime.it
+"""
 
 from __future__ import annotations
 
