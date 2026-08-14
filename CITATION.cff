@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it."
+message: "If you use this software, please cite the accompanying manuscript."
 title: "Neutrosophic-Soft Orbit Football Team Selection"
 type: software
 authors:
@@ -8,3 +8,18 @@ authors:
     affiliation: "MIFT Department, University of Messina, Italy"
 version: 1.0.0
 date-released: 2026-08-14
+repository-code: "https://github.com/giorgionordo/neutrosophic-football-selection"
+
+preferred-citation:
+  type: article
+  title: "A Novel Neutrosophic Over Soft Orbit Topological Framework for Football Team Selection under Uncertainty"
+  authors:
+    - family-names: "Abdulkadhim"
+      given-names: "Murtadha M."
+    - family-names: "Imran"
+      given-names: "Qays Hatem"
+    - family-names: "Yaseen"
+      given-names: "S. R."
+    - family-names: "Nordo"
+      given-names: "Giorgio"
+  year: 2026
