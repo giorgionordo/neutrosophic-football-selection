@@ -43,6 +43,16 @@ Perturbation envelope: **+-10%**
 
 Random seed: **2026**
 
+For each replication `b`, the code records the perturbed optimum `TSF_b`, the
+baseline-reference value `TSF_0`,
+
+```text
+Delta_b = TSF_b - TSF_0,
+```
+
+the TSF attained by the baseline XI under the same perturbed weights, and the
+corresponding regret.
+
 Across all 1000 perturbations:
 
 - mean Jaccard similarity with the baseline XI = **1.000000**
@@ -51,6 +61,15 @@ Across all 1000 perturbations:
 - orbit-open frequency = **1.000000**
 - mean optimized TSF = **0.455691794**
 - standard deviation of optimized TSF = **0.000864886**
+- mean Delta_b = **-0.000002390**
+- minimum Delta_b = **-0.002746697**
+- maximum Delta_b = **0.002713591**
 
 The same starting XI was retained in all 1000 simulations under the specified
-criterion-weight perturbation experiment.
+criterion-weight perturbation experiment. Consequently, the eleven baseline
+players have selection frequency `f_i = 1.0`, while all remaining candidates
+have `f_i = 0.0`.
+
+Detailed per-replication diagnostics are stored in
+`output/sensitivity.csv`. Player-level selection counts and frequencies are
+stored in `output/selection_frequencies.csv`.
