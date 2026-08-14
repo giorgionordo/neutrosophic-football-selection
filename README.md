@@ -6,7 +6,7 @@ Research code accompanying the paper
 
 This repository contains a reproducible Python implementation of the numerical football case study developed in the manuscript. The framework combines **neutrosophic-soft multi-criteria evaluation**, **orbit topology induced by a fixed player-interaction map**, **tactical compatibility**, **position-dependent weighting**, and **constrained 4-3-3 team optimization**.
 
-The code is organized so that the numerical objects used in the case study can be rebuilt from the source data rather than copied manually from tables in the paper.
+The numerical objects used in the case study are generated from frozen source data committed to the repository, so the reported experiment can be reproduced without manually copying values from tables in the paper.
 
 ---
 
@@ -27,15 +27,14 @@ The code is organized so that the numerical objects used in the case study can b
 
 Selecting a football team is not simply a matter of ranking players by individual performance. A realistic selection procedure must also account for uncertainty in the available data, positional constraints, tactical relationships between players, and the fact that the value of a player can depend on the role in which that player is used.
 
-The proposed framework addresses these aspects through two mathematically distinct but computationally connected layers:
+The proposed framework uses two mathematically distinct but computationally connected layers:
 
-1. **Neutrosophic-soft evaluation layer** — each player is evaluated under multiple criteria through triples
-   $(T,I,F)$, representing truth/satisfactory performance, indeterminacy, and falsity/unsatisfactory performance.
-2. **Crisp orbit-topological interaction layer** — a fixed self-map on the player set is derived from pairwise tactical interaction data, generating forward orbits and an associated orbit topology.
+1. **Neutrosophic-soft evaluation layer** — each player is evaluated under multiple criteria through triples $(T,I,F)$ representing truth/satisfactory performance, indeterminacy, and falsity/unsatisfactory performance.
+2. **Crisp orbit-topological interaction layer** — a fixed self-map on the player set is derived from pairwise tactical compatibility, generating forward orbits and an associated orbit topology.
 
-These layers are then combined in a team-level optimization model rather than using individual ranking alone.
+These layers are combined in a team-level objective optimized under role and formation constraints.
 
-The case study considers **20 Manchester City first-team players from the 2024-2025 season** and searches for a feasible **4-3-3 starting eleven**.
+The case study considers **20 Manchester City players from the 2024-2025 Premier League season** and searches for a feasible **4-3-3 starting eleven**.
 
 ---
 
@@ -87,7 +86,16 @@ The role-specific Neutrosophic Overall Score is
 \left(T_{ij}-\alpha_I I_{ij}-\alpha_F F_{ij}\right),
 ```
 
-where $k\in\{G,D,M,F\}$ denotes goalkeeper, defender, midfielder, or forward. In the numerical case study, $\alpha_I=\alpha_F=1$.
+where $k\in\{G,D,M,F\}$. In the numerical case study, $\alpha_I=\alpha_F=1$.
+
+The implementation also uses the normalized score
+
+```math
+\widehat{\mathrm{NOS}}^{k}(P_i)
+=
+\frac{\mathrm{NOS}^{k}(P_i)+\alpha_I+\alpha_F}
+{1+\alpha_I+\alpha_F}.
+```
 
 ### 3. Tactical compatibility
 
@@ -106,7 +114,13 @@ is used to derive the symmetric Tactical Compatibility Index
 \qquad i\neq j.
 ```
 
-The diagonal is treated only as a similarity convention and is **excluded** when the orbit successor is chosen.
+The diagonal follows the self-similarity convention
+
+```math
+a_{ii}=1,
+```
+
+but self-interaction is excluded when the orbit successor is chosen.
 
 ### 4. Fixed orbit map and orbit topology
 
@@ -136,9 +150,9 @@ The associated orbit topology is
 \{O\subseteq U:\phi(O)\subseteq O\}.
 ```
 
-A key modelling point is that **the map $\phi$ is fixed globally**. This prevents the orbit-open condition from becoming mathematically vacuous through a set-dependent choice of the map.
+A key modelling point is that **the map $\phi$ is fixed globally**. This prevents the orbit-open condition from becoming vacuous through a set-dependent choice of the map.
 
-### 5. Orbit Interaction Index
+### 5. Orbit Tactical Interaction index
 
 For each player,
 
@@ -152,46 +166,50 @@ which measures the strength of the first transition in the player's orbit.
 
 ### 6. Constrained team selection
 
-The implementation enforces role eligibility and the positional requirements of a 4-3-3 formation:
+The implementation enforces:
 
 - 1 goalkeeper;
 - 4 defenders;
 - 3 midfielders;
 - 3 forwards;
-- no player can occupy more than one selected role;
-- a player can only be assigned to a role declared as eligible.
+- 11 distinct players;
+- assignment only to explicitly eligible roles.
 
-The Team Selection Function combines three normalized components:
+The Team Selection Function combines:
 
-1. role-specific individual quality (`NOS`);
-2. pairwise tactical compatibility (`TCI`);
-3. retention of strong orbit transitions (`OTI`).
+1. role-specific normalized player quality;
+2. pairwise tactical compatibility;
+3. retained orbit interactions.
 
-The final starting eleven is selected by maximizing this team-level objective over all feasible assignments.
+With the default parameters,
+
+```math
+\alpha=0.50,\qquad \beta=0.35,\qquad \gamma=0.15.
+```
+
+The code exhaustively evaluates every feasible 4-3-3 assignment and returns the maximum TSF.
 
 ---
 
 ## Computational workflow
 
-The repository implements the following reproducible pipeline:
-
 ```text
-Raw player metrics
+Frozen raw player metrics
         |
         v
 Neutrosophic evaluation matrix (T, I, F)
         |
         v
-Normalized interaction matrix
+Directed passing-role interaction matrix
         |
         v
 TCI matrix + fixed orbit map phi
         |
         v
-Forward orbits + orbit diagnostics
+Forward orbits + OTI diagnostics
         |
         v
-Role-specific NOS + OTI
+Role-specific normalized NOS
         |
         v
 Feasible 4-3-3 assignments
@@ -204,69 +222,148 @@ Optimal feasible starting XI
         |
         v
 Monte Carlo sensitivity analysis
+        |
+        +--> per-replication diagnostics
+        +--> player selection frequencies
 ```
 
 ---
 
-## Case study
+## Data provenance
 
-The numerical example uses a 20-player Manchester City roster from the **2024-2025 season**. Public football information used in the study is based on sources such as the **Premier League**, **Manchester City FC**, and **FBref**; the repository-specific definitions and transformations are documented in `DATA_PROVENANCE.md`.
+The statistical source underlying the frozen case-study data is **FBref**. For automated acquisition, `download_fbref_data.py` uses the public Kaggle dataset **Hubert Sidorowicz, Football Players Stats (2024-2025)**, which is derived from FBref.
 
-With players restricted to their listed official roles, the roster composition considered in the manuscript consists of two goalkeepers, six defenders, eight midfielders, and four forwards. This gives
+The documented acquisition chain is:
+
+```text
+FBref season statistics
+    -> FBref-derived Kaggle dataset
+    -> download_fbref_data.py
+    -> data/manchester_city_fbref_source.csv
+    -> data/raw_player_metrics.csv
+```
+
+The frozen `data/raw_player_metrics.csv` is sufficient to reproduce the numerical experiment. Re-downloading the external source is optional.
+
+Top-speed and distance-covered variables are left missing when no homogeneous season-level source is available for all twenty players. The code does **not** invent these values; missing evidence is represented through the indeterminacy component.
+
+See `DATA_PROVENANCE.md` and `DATA_SOURCES.md` for the complete definitions and acquisition details.
+
+---
+
+## Reproduced case-study result
+
+With official roles only, the roster counts would give
 
 ```math
 2\binom{6}{4}\binom{8}{3}\binom{4}{3}=6720
 ```
 
-possible 4-3-3 role combinations before accounting for additional multi-position eligibility.
+4-3-3 combinations. The executable model also allows Phil Foden (`P14`) as `M|F`, so the actual search space contains **13,020 feasible assignments**.
 
-### Starting XI reported in the manuscript case study
+The current reproducible optimum is:
 
-| Role | Player |
-|---|---|
-| Goalkeeper | Ederson |
-| Defender | Rúben Dias |
-| Defender | Manuel Akanji |
-| Defender | Nathan Aké |
-| Defender | Rico Lewis |
-| Midfielder | Kevin De Bruyne |
-| Midfielder | Mateo Kovačić |
-| Midfielder | İlkay Gündoğan |
-| Forward | Jérémy Doku |
-| Forward | Erling Haaland |
-| Forward | Phil Foden |
+| Role | Player code | Player |
+|---|---|---|
+| G | P1 | Ederson |
+| D | P3 | Rúben Dias |
+| D | P5 | Manuel Akanji |
+| D | P7 | Joško Gvardiol |
+| D | P8 | Rico Lewis |
+| M | P10 | Kevin De Bruyne |
+| M | P11 | Bernardo Silva |
+| M | P13 | Matheus Nunes |
+| F | P14 | Phil Foden |
+| F | P15 | Jérémy Doku |
+| F | P16 | Jack Grealish |
 
-Phil Foden illustrates the role-eligibility mechanism: although listed as a midfielder in the case-study roster, he can be selected as a forward only when that alternative role is explicitly enabled in the eligibility matrix.
+The corresponding objective values are:
 
-The authoritative numerical output of the repository is generated by the code and stored in `output/optimal_starting_xi.csv`.
+```text
+individual component     0.626305247
+compatibility component  0.228708902
+orbit component          0.416622967
+TSF                      0.455694184
+orbit transitions        11/11
+orbit-open               True
+```
+
+The authoritative generated files are `output/optimal_starting_xi.csv` and `CASE_STUDY_RESULTS.md`.
 
 ---
 
 ## Quick start
 
-**Python 3.10 or later** is recommended. The current implementation uses only the Python standard library; no third-party packages are required.
+**Python 3.10 or later** is recommended.
 
-From PyCharm, run:
+### Reproduce the frozen case study
 
-```text
-run_case_study.py
-```
-
-or from a terminal:
+The core experiment uses only the Python standard library:
 
 ```bash
 python run_case_study.py
 ```
 
-The program:
+No third-party dependency is required for this step. `requirements.txt` documents this core environment.
+
+The command:
 
 - rebuilds the neutrosophic evaluation matrix;
-- rebuilds the pairwise tactical interaction matrix;
-- constructs the tactical compatibility matrix and the fixed orbit map;
-- generates orbit diagnostics;
+- rebuilds the directed interaction matrix;
+- constructs TCI, the fixed orbit map and orbit diagnostics;
 - computes player-level scores;
-- enumerates and optimizes feasible 4-3-3 assignments;
-- runs a **1000-repetition sensitivity analysis**.
+- exhaustively optimizes the feasible 4-3-3 assignments;
+- runs 1000 Monte Carlo weight perturbations;
+- writes per-replication sensitivity diagnostics;
+- writes player selection frequencies.
+
+### Rebuild the raw input from the external source
+
+Data acquisition requires `kagglehub`:
+
+```bash
+pip install -r requirements-data.txt
+python download_fbref_data.py
+```
+
+Downloaded external files are placed under `external_data/`, which is intentionally excluded from Git version control.
+
+---
+
+## Sensitivity analysis
+
+The default experiment uses:
+
+```text
+B = 1000
+delta = 0.10
+seed = 2026
+```
+
+For each replication, the role-dependent criterion weights are independently perturbed within the specified envelope and then renormalized.
+
+The code records:
+
+```text
+selected_players
+jaccard
+tsf_optimum
+tsf_baseline_reference
+delta_tsf
+tsf_baseline_perturbed
+regret
+orbit_open
+```
+
+where
+
+```math
+\Delta_b=TSF_b-TSF_0.
+```
+
+For the current case study, the same starting XI is retained in all 1000 simulations. The mean Jaccard similarity is 1, the maximum regret is 0 to reported precision, and all eleven baseline players have selection frequency 1.
+
+Detailed results are stored in `output/sensitivity.csv`; player-level frequencies are stored in `output/selection_frequencies.csv`.
 
 ---
 
@@ -274,56 +371,68 @@ The program:
 
 ```text
 .
+├── README.md
+├── CITATION.cff
+├── requirements.txt
+├── requirements-data.txt
 ├── run_case_study.py
 ├── build_neutrosophic_matrix.py
 ├── build_interaction_matrix.py
+├── download_fbref_data.py
 ├── football_team_selection.py
 ├── DATA_PROVENANCE.md
+├── DATA_SOURCES.md
 ├── CASE_STUDY_RESULTS.md
 ├── data/
+│   ├── players.csv
+│   ├── weights.csv
+│   ├── criteria_definition.csv
 │   ├── raw_player_metrics.csv
+│   ├── physical_metrics.csv
 │   ├── neutrosophic_matrix.csv
 │   └── interaction_matrix.csv
 └── output/
     ├── player_scores.csv
     ├── orbits.csv
     ├── optimal_starting_xi.csv
-    └── sensitivity.csv
+    ├── sensitivity.csv
+    └── selection_frequencies.csv
 ```
 
 ### Main files
 
 - `run_case_study.py` — one-command reproduction of the complete numerical experiment.
-- `build_neutrosophic_matrix.py` — converts raw player data into the $(T,I,F)$ evaluation matrix.
-- `build_interaction_matrix.py` — constructs the directed passing/role-affinity interaction matrix.
-- `football_team_selection.py` — computes compatibility, orbit structure, scores, feasibility constraints, and team optimization.
-- `data/raw_player_metrics.csv` — Manchester City Premier League 2024-25 case-study inputs.
+- `build_neutrosophic_matrix.py` — converts frozen raw player data into the $(T,I,F)$ evaluation matrix.
+- `build_interaction_matrix.py` — constructs the directed passing-role interaction potential.
+- `football_team_selection.py` — implements scores, tactical compatibility, orbit structure, feasibility, optimization and sensitivity analysis.
+- `download_fbref_data.py` — optional reconstruction of the raw input from the FBref-derived Kaggle dataset.
+- `data/raw_player_metrics.csv` — frozen Manchester City Premier League 2024-25 case-study input.
 - `data/neutrosophic_matrix.csv` — generated $20\times12$ neutrosophic matrix.
-- `data/interaction_matrix.csv` — generated $20\times20$ directed interaction matrix.
-- `output/player_scores.csv` — player scores and orbit-related indicators (`NOS`, normalized `NOS`, `sigma`, `OTI`).
-- `output/orbits.csv` — orbit and successor diagnostics.
+- `data/interaction_matrix.csv` — generated $20\times20$ directed interaction matrix with unit diagonal.
+- `output/player_scores.csv` — NOS, normalized NOS, successor and OTI values.
+- `output/orbits.csv` — successor and forward-orbit diagnostics.
 - `output/optimal_starting_xi.csv` — maximizing feasible 4-3-3 assignment.
-- `output/sensitivity.csv` — results of the 1000 Monte Carlo perturbations.
-- `DATA_PROVENANCE.md` — exact data definitions, transformations, and sources.
-- `CASE_STUDY_RESULTS.md` — numerical summary of the reproduced experiment.
+- `output/sensitivity.csv` — per-replication Monte Carlo robustness diagnostics.
+- `output/selection_frequencies.csv` — player selection counts and frequencies.
+- `DATA_PROVENANCE.md` — data definitions, transformations and provenance.
+- `DATA_SOURCES.md` — source-acquisition workflow.
+- `CASE_STUDY_RESULTS.md` — compact numerical summary of the reproduced experiment.
 
 ---
 
 ## Reproducibility principles
 
-The repository is designed to make the numerical study auditable and reproducible.
+The repository is designed to make the numerical study auditable and reproducible:
 
-In particular:
-
-- derived matrices are generated from source data rather than transcribed manually;
-- the orbit successor excludes self-interaction, avoiding the trivial identity map caused by diagonal values equal to one;
+- derived matrices are generated from frozen source data rather than copied from manuscript tables;
+- the orbit successor excludes self-interaction even though `a_ii=1` is retained as a similarity convention;
 - tie breaking in the orbit map is deterministic;
-- role eligibility is explicit rather than inferred during optimization;
-- missing measurements are **not reconstructed by guesswork**;
-- tracking variables unavailable on a common public basis are represented through the **indeterminacy component** rather than filled with artificial values;
-- sensitivity perturbations are run repeatedly instead of relying on a single modified weight vector.
-
-For the complete methodological specification, see `DATA_PROVENANCE.md`.
+- role eligibility is explicit;
+- missing measurements are not reconstructed by guesswork;
+- unavailable tracking evidence is represented through indeterminacy;
+- the exhaustive search reports the actual number of feasible assignments;
+- sensitivity perturbations use a fixed random seed;
+- both per-replication diagnostics and player selection frequencies are exported.
 
 ---
 
@@ -338,27 +447,17 @@ The principal computational costs are approximately:
 - straightforward orbit generation: at most $O(n^2)$;
 - exhaustive team evaluation: $O(N_{\mathrm{feas}}\,11^2)$.
 
-Thus, the combinatorial search over feasible formations is the dominant term for larger candidate pools.
+The combinatorial search over feasible formations is therefore the dominant term for larger candidate pools.
 
 ---
 
 ## Interpretation and scope
 
-This project is intended as a **mathematically structured decision-support framework**, not as a replacement for expert coaching judgement.
+This project is a **mathematically structured decision-support framework**, not a replacement for expert coaching judgement.
 
-The case study demonstrates how uncertain player evaluations and tactical interaction information can be combined in a single constrained model. The current experiment is deliberately limited to one professional squad, a predefined set of criteria, season-aggregated data, and a fixed formation.
+The current numerical experiment is deliberately limited to one professional squad, twelve predefined criteria, season-aggregated data, a fixed tactical-interaction construction and a fixed 4-3-3 formation.
 
-Potential extensions include:
-
-- opponent-specific tactical constraints;
-- match-specific or rolling performance data;
-- GPS and real-time positional tracking;
-- expected goals (`xG`) and expected assists (`xA`);
-- fatigue and dynamic player-condition indicators;
-- substitution and formation changes;
-- ablation studies separating individual, positional, pairwise, and orbit effects;
-- machine-learning or reinforcement-learning components;
-- deeper study of connectedness, closure operators, recurrent classes, and fixed points in football interaction orbit topologies.
+Potential extensions include opponent-specific constraints, rolling or match-specific data, GPS and positional tracking, expected-goals variables, fatigue indicators, substitutions, formation changes, ablation studies and richer dynamical/topological analysis of the interaction map.
 
 ---
 
@@ -386,8 +485,4 @@ If you use this repository in academic work, please cite the accompanying manusc
 }
 ```
 
----
-
-## Research focus
-
-The repository is intended to make the link between the theoretical framework and its numerical case study explicit: **uncertain multi-criteria player evaluation is handled in the neutrosophic-soft layer, while tactical relationships are represented by a fixed crisp interaction map and its orbit topology; the final choice is made at team level under positional constraints.**
+The repository also contains `CITATION.cff` for machine-readable software citation metadata.
