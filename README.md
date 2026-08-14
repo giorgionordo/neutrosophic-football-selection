@@ -30,7 +30,7 @@ Selecting a football team is not simply a matter of ranking players by individua
 The proposed framework addresses these aspects through two mathematically distinct but computationally connected layers:
 
 1. **Neutrosophic-soft evaluation layer** — each player is evaluated under multiple criteria through triples
-   \((T,I,F)\), representing truth/satisfactory performance, indeterminacy, and falsity/unsatisfactory performance.
+   $(T,I,F)$, representing truth/satisfactory performance, indeterminacy, and falsity/unsatisfactory performance.
 2. **Crisp orbit-topological interaction layer** — a fixed self-map on the player set is derived from pairwise tactical interaction data, generating forward orbits and an associated orbit topology.
 
 These layers are then combined in a team-level optimization model rather than using individual ranking alone.
@@ -45,9 +45,9 @@ The case study considers **20 Manchester City first-team players from the 2024-2
 
 Let
 
-\[
+$$
 U=\{P_1,\ldots,P_n\}
-\]
+$$
 
 be the set of candidate players. Each player is evaluated with respect to twelve criteria:
 
@@ -72,39 +72,39 @@ The importance of the criteria is **role-dependent**: goalkeepers, defenders, mi
 
 The player-evaluation matrix is
 
-\[
+$$
 M=\big[(T_{ij},I_{ij},F_{ij})\big]_{n\times 12}.
-\]
+$$
 
-For player \(P_i\) and criterion \(C_j\), the three components preserve separate information about satisfactory performance, uncertainty, and unsatisfactory performance.
+For player $P_i$ and criterion $C_j$, the three components preserve separate information about satisfactory performance, uncertainty, and unsatisfactory performance.
 
 The role-specific Neutrosophic Overall Score is
 
-\[
+$$
 \operatorname{NOS}^{k}(P_i)
 =
 \sum_{j=1}^{12} w_j^k
 \left(T_{ij}-\alpha_I I_{ij}-\alpha_F F_{ij}\right),
-\]
+$$
 
-where \(k\in\{G,D,M,F\}\) denotes goalkeeper, defender, midfielder, or forward. In the numerical case study, \(\alpha_I=\alpha_F=1\).
+where $k\in\{G,D,M,F\}$ denotes goalkeeper, defender, midfielder, or forward. In the numerical case study, $\alpha_I=\alpha_F=1$.
 
 ### 3. Tactical compatibility
 
 A normalized directed interaction matrix
 
-\[
+$$
 A=(a_{ij}), \qquad 0\le a_{ij}\le 1,
-\]
+$$
 
 is used to derive the symmetric Tactical Compatibility Index
 
-\[
+$$
 \operatorname{TCI}(P_i,P_j)
 =
 \frac{a_{ij}+a_{ji}}{2},
 \qquad i\neq j.
-\]
+$$
 
 The diagonal is treated only as a similarity convention and is **excluded** when the orbit successor is chosen.
 
@@ -112,41 +112,41 @@ The diagonal is treated only as a similarity convention and is **excluded** when
 
 For every player,
 
-\[
+$$
 \phi(P_i)
 =
 P_{\arg\max_{k\ne i}\operatorname{TCI}(P_i,P_k)},
-\]
+$$
 
 with deterministic tie breaking when necessary.
 
 The forward orbit is
 
-\[
+$$
 \operatorname{Orb}_{\phi}(P_i)
 =
 \{P_i,\phi(P_i),\phi^2(P_i),\ldots\}.
-\]
+$$
 
 The associated orbit topology is
 
-\[
+$$
 \tau_{\phi}
 =
 \{O\subseteq U:\phi(O)\subseteq O\}.
-\]
+$$
 
-A key modelling point is that **the map \(\phi\) is fixed globally**. This prevents the orbit-open condition from becoming mathematically vacuous through a set-dependent choice of the map.
+A key modelling point is that **the map $\phi$ is fixed globally**. This prevents the orbit-open condition from becoming mathematically vacuous through a set-dependent choice of the map.
 
 ### 5. Orbit Interaction Index
 
 For each player,
 
-\[
+$$
 \operatorname{OTI}(P_i)
 =
 \operatorname{TCI}(P_i,\phi(P_i)),
-\]
+$$
 
 which measures the strength of the first transition in the player's orbit.
 
@@ -214,9 +214,9 @@ The numerical example uses a 20-player Manchester City roster from the **2024-20
 
 With players restricted to their listed official roles, the roster composition considered in the manuscript consists of two goalkeepers, six defenders, eight midfielders, and four forwards. This gives
 
-\[
+$$
 2\binom{6}{4}\binom{8}{3}\binom{4}{3}=6720
-\]
+$$
 
 possible 4-3-3 role combinations before accounting for additional multi-position eligibility.
 
@@ -294,12 +294,12 @@ The program:
 ### Main files
 
 - `run_case_study.py` — one-command reproduction of the complete numerical experiment.
-- `build_neutrosophic_matrix.py` — converts raw player data into the \((T,I,F)\) evaluation matrix.
+- `build_neutrosophic_matrix.py` — converts raw player data into the $(T,I,F)$ evaluation matrix.
 - `build_interaction_matrix.py` — constructs the directed passing/role-affinity interaction matrix.
 - `football_team_selection.py` — computes compatibility, orbit structure, scores, feasibility constraints, and team optimization.
 - `data/raw_player_metrics.csv` — Manchester City Premier League 2024-25 case-study inputs.
-- `data/neutrosophic_matrix.csv` — generated \(20\times12\) neutrosophic matrix.
-- `data/interaction_matrix.csv` — generated \(20\times20\) directed interaction matrix.
+- `data/neutrosophic_matrix.csv` — generated $20\times12$ neutrosophic matrix.
+- `data/interaction_matrix.csv` — generated $20\times20$ directed interaction matrix.
 - `output/player_scores.csv` — player scores and orbit-related indicators (`NOS`, normalized `NOS`, `sigma`, `OTI`).
 - `output/orbits.csv` — orbit and successor diagnostics.
 - `output/optimal_starting_xi.csv` — maximizing feasible 4-3-3 assignment.
@@ -329,14 +329,14 @@ For the complete methodological specification, see `DATA_PROVENANCE.md`.
 
 ## Complexity
 
-Let \(n\) be the number of candidate players, \(m\) the number of criteria, and \(N_{\mathrm{feas}}\) the number of feasible role assignments.
+Let $n$ be the number of candidate players, $m$ the number of criteria, and $N_{\mathrm{feas}}$ the number of feasible role assignments.
 
 The principal computational costs are approximately:
 
-- player-score construction: \(O(nm)\);
-- complete pairwise compatibility construction: \(O(n^2)\);
-- straightforward orbit generation: at most \(O(n^2)\);
-- exhaustive team evaluation: \(O(N_{\mathrm{feas}}\,11^2)\).
+- player-score construction: $O(nm)$;
+- complete pairwise compatibility construction: $O(n^2)$;
+- straightforward orbit generation: at most $O(n^2)$;
+- exhaustive team evaluation: $O(N_{\mathrm{feas}}\,11^2)$.
 
 Thus, the combinatorial search over feasible formations is the dominant term for larger candidate pools.
 
