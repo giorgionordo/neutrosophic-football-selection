@@ -2,7 +2,7 @@
 
 Reproducible Python implementation for the numerical case study of
 
-**A Neutrosophic Over Soft Orbit Topological Framework for Football Team
+**A Novel Neutrosophic Over Soft Orbit Topological Framework for Football Team
 Selection under Uncertainty**
 
 The code follows the mathematical definitions in the manuscript and is written
