@@ -17,8 +17,10 @@ For i != j, the directed raw affinity from P_i to P_j is
     b_ij = sqrt(rho_i * rho_j) * p_i * r_j.
 
 The off-diagonal values are then divided by their global maximum so that the
-largest directed affinity equals 1. The diagonal is set to zero because
-self-interaction is not used by the orbit map.
+largest directed affinity equals 1. Following the similarity convention used
+in the manuscript, the diagonal is set to a_ii = 1. The orbit successor is
+nevertheless always chosen among k != i, so diagonal entries never determine
+the orbit map.
 
 This matrix represents passing-role interaction potential, not observed
 player-to-player pass counts. This distinction is explicitly documented in
@@ -139,7 +141,7 @@ def build_interaction_matrix(
     for player_i in players:
         for player_j in players:
             if player_i == player_j:
-                raw[(player_i, player_j)] = 0.0
+                raw[(player_i, player_j)] = 1.0
             else:
                 raw[(player_i, player_j)] = (
                     math.sqrt(rho[player_i] * rho[player_j])
@@ -164,7 +166,7 @@ def build_interaction_matrix(
             row = [player_i]
             for player_j in players:
                 value = (
-                    0.0
+                    1.0
                     if player_i == player_j
                     else raw[(player_i, player_j)] / maximum
                 )
