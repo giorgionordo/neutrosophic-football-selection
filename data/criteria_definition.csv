@@ -1,0 +1,13 @@
+criterion,name,outfield_definition,goalkeeper_definition,principal_source
+C1,Passing Accuracy,Pass completion %,Pass completion %,FBref Passing
+C2,Ball Control,"Take-on success %, inverse miscontrols/90, inverse dispossessed/90","Pass completion %, inverse miscontrols/90",FBref Possession/Passing
+C3,Dribbling Ability,"Successful take-ons/90, progressive carries/90",not materially used for GK,FBref Possession
+C4,Shooting Accuracy,Shots on target %,not materially used for GK,FBref Shooting
+C5,Defensive Ability,"Tackles+interceptions/90, blocks/90, clearances/90",Save %,FBref Defensive Actions / Goalkeeping
+C6,Tactical Awareness,"Recoveries/90, progressive passes/90","OPA/90, Save %",FBref Miscellaneous/Passing/Advanced Goalkeeping
+C7,Positioning,"Progressive receptions/90, touches in attacking penalty area/90",PSxG +/- per 90,FBref Standard/Possession/Advanced Goalkeeping
+C8,Speed,Top speed (km/h),Top speed (km/h),Premier League tracking statistics
+C9,Stamina,Distance covered per 90 (km),Distance covered per 90 (km),Premier League tracking statistics
+C10,Teamwork,"Completed passes/90, key passes/90",Completed passes/90,FBref Passing
+C11,Decision Making,"Pass completion %, inverse miscontrols/90, inverse dispossessed/90, inverse errors/90","Pass completion %, inverse errors/90",FBref Passing/Possession/Defensive Actions
+C12,Physical Fitness,"Availability ratio, distance/90",Availability ratio,Playing time + Premier League tracking statistics

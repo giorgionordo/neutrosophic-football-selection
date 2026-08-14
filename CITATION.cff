@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it."
+title: "Neutrosophic-Soft Orbit Football Team Selection"
+type: software
+authors:
+  - family-names: "Nordo"
+    given-names: "Giorgio"
+    affiliation: "MIFT Department, University of Messina, Italy"
+version: 1.0.0
+date-released: 2026-08-14
