@@ -57,6 +57,10 @@ This keeps the role weights supplied by the case study fixed rather than
 estimating a new objective weight vector inside the benchmark.
 
 No third-party packages are required.
+
+----------------------------------------------------------------------------------
+author: Giorgio Nordo - Dipartimento MIFT. Università di Messina, Italy
+www.nordo.it   |  giorgio.nordo@unime.it
 """
 
 from __future__ import annotations
