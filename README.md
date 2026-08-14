@@ -1,6 +1,6 @@
 # Neutrosophic-Soft Orbit Football Team Selection
 
-Research code accompanying the manuscript
+Research code accompanying the paper
 
 > **A Novel Neutrosophic Over Soft Orbit Topological Framework for Football Team Selection under Uncertainty**
 
