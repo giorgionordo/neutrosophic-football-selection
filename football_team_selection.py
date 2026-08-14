@@ -647,9 +647,9 @@ def sensitivity_analysis(
     B: int = 1000,
     delta: float = 0.10,
     seed: int = 2026,
-) -> List[Dict[str, float | int]]:
+) -> List[Dict[str, float | int | str]]:
     rng = Random(seed)
-    rows: List[Dict[str, float | int]] = []
+    rows: List[Dict[str, float | int | str]] = []
 
     # The compatibility and orbit components do not depend on criterion
     # weights. Precompute them once for every feasible assignment so that
@@ -695,6 +695,7 @@ def sensitivity_analysis(
         )
 
     baseline_keys = tuple(baseline.assignment)
+    baseline_reference_tsf = baseline.tsf
 
     for simulation in range(1, B + 1):
         perturbed_weights = perturb_weights(weights, delta, rng)
@@ -725,7 +726,6 @@ def sensitivity_analysis(
             if tsf > best_tsf:
                 best_tsf = tsf
                 best_record = record
-                best_individual = individual_component
 
         if best_record is None:
             raise ValueError("The 4-3-3 feasible set is empty")
@@ -737,7 +737,7 @@ def sensitivity_analysis(
             )
             / N_STARTERS
         )
-        baseline_tsf = (
+        baseline_tsf_perturbed = (
             parameters.alpha * baseline_individual
             + parameters.beta * baseline.compatibility_component
             + parameters.gamma * baseline.orbit_component
@@ -746,14 +746,57 @@ def sensitivity_analysis(
         rows.append(
             {
                 "simulation": simulation,
+                "selected_players": "|".join(best_record[1]),
                 "jaccard": jaccard(best_record[1], baseline.selected),
-                "regret": best_tsf - baseline_tsf,
                 "tsf_optimum": best_tsf,
+                "tsf_baseline_reference": baseline_reference_tsf,
+                "delta_tsf": best_tsf - baseline_reference_tsf,
+                "tsf_baseline_perturbed": baseline_tsf_perturbed,
+                "regret": best_tsf - baseline_tsf_perturbed,
                 "orbit_open": int(best_record[5]),
             }
         )
 
     return rows
+
+
+#------------------ function selection_frequencies
+def selection_frequencies(
+    rows: Sequence[Mapping[str, float | int | str]],
+    players: Mapping[PlayerCode, Player],
+) -> List[Dict[str, float | int | str]]:
+    if not rows:
+        return []
+
+    counts: Dict[PlayerCode, int] = {
+        player.code: 0
+        for player in players.values()
+    }
+
+    for row in rows:
+        selected_text = str(row.get("selected_players", ""))
+        selected = [
+            code
+            for code in selected_text.split("|")
+            if code
+        ]
+        for code in selected:
+            if code not in counts:
+                raise ValueError(
+                    f"Unknown player {code} in sensitivity-analysis output"
+                )
+            counts[code] += 1
+
+    B = len(rows)
+    return [
+        {
+            "player": player.code,
+            "name": player.name,
+            "selection_count": counts[player.code],
+            "selection_frequency": counts[player.code] / B,
+        }
+        for player in players.values()
+    ]
 
 
 #------------------ function write_scores
@@ -839,7 +882,7 @@ def write_orbits(
 #------------------ function write_sensitivity
 def write_sensitivity(
     path: str | Path,
-    rows: Sequence[Mapping[str, float | int]],
+    rows: Sequence[Mapping[str, float | int | str]],
 ) -> None:
     if not rows:
         return
@@ -924,6 +967,11 @@ def run_case_study(
             seed=sensitivity_seed,
         )
         write_sensitivity(output_dir / "sensitivity.csv", rows)
+        frequencies = selection_frequencies(rows, players)
+        write_sensitivity(
+            output_dir / "selection_frequencies.csv",
+            frequencies,
+        )
 
     print(f"Feasible 4-3-3 assignments: {feasible_count}")
     print(f"Best TSF: {optimum.tsf:.9f}")
