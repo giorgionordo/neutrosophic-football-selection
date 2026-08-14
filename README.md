@@ -15,7 +15,7 @@ The numerical objects used in the case study are generated from frozen source da
 | Author | Affiliation |
 |---|---|
 | **Murtadha M. Abdulkadhim** | Department of First Grade Teacher Education, College of Basic Education, Al-Muthanna University, Samawah 66001, Iraq |
-| **Qays Hatem Imran*** | Department of Mathematics, College of Education for Pure Science, Al-Muthanna University, Samawah 66001, Iraq |
+| **Qays Hatem Imran** | Department of Mathematics, College of Education for Pure Science, Al-Muthanna University, Samawah 66001, Iraq |
 | **Yaseen S. R.** | Department of Mathematics, College of Education for Pure Science, Tikrit University, Tikrit 34001, Iraq |
 | **Giorgio Nordo** | MIFT Department, University of Messina, Viale Ferdinando Stagno d'Alcontres 31, 98166 Messina, Italy |
 
