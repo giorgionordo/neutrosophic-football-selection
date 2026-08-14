@@ -1,2 +1,5 @@
-# No third-party Python packages are required.
+# Core case-study reproduction uses only the Python standard library.
 # Python 3.10 or later is recommended.
+#
+# To rebuild raw data from the external Kaggle source, install instead:
+#     pip install -r requirements-data.txt
