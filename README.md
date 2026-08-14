@@ -81,7 +81,7 @@ For player $P_i$ and criterion $C_j$, the three components preserve separate inf
 The role-specific Neutrosophic Overall Score is
 
 ```math
-\operatorname{NOS}^{k}(P_i)
+\mathrm{NOS}^{k}(P_i)
 =
 \sum_{j=1}^{12} w_j^k
 \left(T_{ij}-\alpha_I I_{ij}-\alpha_F F_{ij}\right),
@@ -100,7 +100,7 @@ A=(a_{ij}), \qquad 0\le a_{ij}\le 1,
 is used to derive the symmetric Tactical Compatibility Index
 
 ```math
-\operatorname{TCI}(P_i,P_j)
+\mathrm{TCI}(P_i,P_j)
 =
 \frac{a_{ij}+a_{ji}}{2},
 \qquad i\neq j.
@@ -115,7 +115,7 @@ For every player,
 ```math
 \phi(P_i)
 =
-P_{\arg\max_{k\ne i}\operatorname{TCI}(P_i,P_k)},
+P_{\mathrm{arg\,max}_{k\ne i}\mathrm{TCI}(P_i,P_k)},
 ```
 
 with deterministic tie breaking when necessary.
@@ -123,7 +123,7 @@ with deterministic tie breaking when necessary.
 The forward orbit is
 
 ```math
-\operatorname{Orb}_{\phi}(P_i)
+\mathrm{Orb}_{\phi}(P_i)
 =
 \{P_i,\phi(P_i),\phi^2(P_i),\ldots\}.
 ```
@@ -143,9 +143,9 @@ A key modelling point is that **the map $\phi$ is fixed globally**. This prevent
 For each player,
 
 ```math
-\operatorname{OTI}(P_i)
+\mathrm{OTI}(P_i)
 =
-\operatorname{TCI}(P_i,\phi(P_i)),
+\mathrm{TCI}(P_i,\phi(P_i)),
 ```
 
 which measures the strength of the first transition in the player's orbit.
