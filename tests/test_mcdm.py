@@ -1,3 +1,11 @@
+"""
+Reproducibility tests for the role-specific MCDM comparison.
+
+----------------------------------------------------------------------------------
+author: Giorgio Nordo - Dipartimento MIFT. Università di Messina, Italy
+www.nordo.it   |  giorgio.nordo@unime.it
+"""
+
 from __future__ import annotations
 
 import tempfile
