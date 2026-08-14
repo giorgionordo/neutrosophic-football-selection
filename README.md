@@ -45,9 +45,9 @@ The case study considers **20 Manchester City first-team players from the 2024-2
 
 Let
 
-$$
+```math
 U=\{P_1,\ldots,P_n\}
-$$
+```
 
 be the set of candidate players. Each player is evaluated with respect to twelve criteria:
 
@@ -72,20 +72,20 @@ The importance of the criteria is **role-dependent**: goalkeepers, defenders, mi
 
 The player-evaluation matrix is
 
-$$
+```math
 M=\big[(T_{ij},I_{ij},F_{ij})\big]_{n\times 12}.
-$$
+```
 
 For player $P_i$ and criterion $C_j$, the three components preserve separate information about satisfactory performance, uncertainty, and unsatisfactory performance.
 
 The role-specific Neutrosophic Overall Score is
 
-$$
+```math
 \operatorname{NOS}^{k}(P_i)
 =
 \sum_{j=1}^{12} w_j^k
 \left(T_{ij}-\alpha_I I_{ij}-\alpha_F F_{ij}\right),
-$$
+```
 
 where $k\in\{G,D,M,F\}$ denotes goalkeeper, defender, midfielder, or forward. In the numerical case study, $\alpha_I=\alpha_F=1$.
 
@@ -93,18 +93,18 @@ where $k\in\{G,D,M,F\}$ denotes goalkeeper, defender, midfielder, or forward. In
 
 A normalized directed interaction matrix
 
-$$
+```math
 A=(a_{ij}), \qquad 0\le a_{ij}\le 1,
-$$
+```
 
 is used to derive the symmetric Tactical Compatibility Index
 
-$$
+```math
 \operatorname{TCI}(P_i,P_j)
 =
 \frac{a_{ij}+a_{ji}}{2},
 \qquad i\neq j.
-$$
+```
 
 The diagonal is treated only as a similarity convention and is **excluded** when the orbit successor is chosen.
 
@@ -112,29 +112,29 @@ The diagonal is treated only as a similarity convention and is **excluded** when
 
 For every player,
 
-$$
+```math
 \phi(P_i)
 =
 P_{\arg\max_{k\ne i}\operatorname{TCI}(P_i,P_k)},
-$$
+```
 
 with deterministic tie breaking when necessary.
 
 The forward orbit is
 
-$$
+```math
 \operatorname{Orb}_{\phi}(P_i)
 =
 \{P_i,\phi(P_i),\phi^2(P_i),\ldots\}.
-$$
+```
 
 The associated orbit topology is
 
-$$
+```math
 \tau_{\phi}
 =
 \{O\subseteq U:\phi(O)\subseteq O\}.
-$$
+```
 
 A key modelling point is that **the map $\phi$ is fixed globally**. This prevents the orbit-open condition from becoming mathematically vacuous through a set-dependent choice of the map.
 
@@ -142,11 +142,11 @@ A key modelling point is that **the map $\phi$ is fixed globally**. This prevent
 
 For each player,
 
-$$
+```math
 \operatorname{OTI}(P_i)
 =
 \operatorname{TCI}(P_i,\phi(P_i)),
-$$
+```
 
 which measures the strength of the first transition in the player's orbit.
 
@@ -214,9 +214,9 @@ The numerical example uses a 20-player Manchester City roster from the **2024-20
 
 With players restricted to their listed official roles, the roster composition considered in the manuscript consists of two goalkeepers, six defenders, eight midfielders, and four forwards. This gives
 
-$$
+```math
 2\binom{6}{4}\binom{8}{3}\binom{4}{3}=6720
-$$
+```
 
 possible 4-3-3 role combinations before accounting for additional multi-position eligibility.
 
