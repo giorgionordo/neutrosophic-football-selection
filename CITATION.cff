@@ -8,6 +8,7 @@ authors:
     affiliation: "MIFT Department, University of Messina, Italy"
 version: 1.0.0
 date-released: 2026-08-14
+license: MIT
 repository-code: "https://github.com/giorgionordo/neutrosophic-football-selection"
 
 preferred-citation:
