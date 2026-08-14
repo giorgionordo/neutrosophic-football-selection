@@ -121,10 +121,11 @@ b_ij = sqrt(rho_i rho_j) p_i r_j.
 ```
 
 The off-diagonal values are divided by their maximum to produce `a_ij` in
-`[0,1]`. The diagonal is set to zero in the current stored directed-affinity
-matrix and is excluded from the orbit-successor search. The tactical
-compatibility function used by the optimizer nevertheless applies the
-manuscript convention `TCI(P_i,P_i)=1`.
+`[0,1]`. In accordance with the manuscript convention, the stored matrix uses
+`a_ii = 1` on the diagonal as a self-similarity value. These diagonal entries
+are excluded from the orbit-successor search, so they do not affect the map
+`sigma`. The tactical compatibility function is therefore consistent with the
+same convention `TCI(P_i,P_i)=1`.
 
 This definition makes the pairwise matrix fully reproducible from the frozen
 aggregate data while explicitly distinguishing tactical affinity from directly
