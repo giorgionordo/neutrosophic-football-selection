@@ -8,7 +8,15 @@ The program:
     1. builds the neutrosophic matrix from raw_player_metrics.csv;
     2. builds the tactical passing-affinity matrix;
     3. optimizes the 4-3-3 starting XI;
-    4. performs the Monte Carlo sensitivity analysis.
+    4. performs the Monte Carlo sensitivity analysis;
+    5. writes per-simulation robustness diagnostics to output/sensitivity.csv;
+    6. writes player selection frequencies to output/selection_frequencies.csv.
+
+The sensitivity output includes the selected players, Jaccard similarity with
+the baseline XI, the perturbed optimum TSF, Delta_b = TSF_b - TSF_0, the TSF
+of the baseline XI under the same perturbation, the corresponding regret, and
+orbit-openness. Selection frequencies f_i are computed over all Monte Carlo
+replications.
 
 ----------------------------------------------------------------------------------
 author: Giorgio Nordo - Dipartimento MIFT. Università di Messina, Italy
@@ -55,7 +63,7 @@ if __name__ == "__main__":
         DATA_DIR / "interaction_matrix.csv",
     )
 
-    print("Step 3/3 - Optimizing the starting XI")
+    print("Step 3/3 - Optimizing the starting XI and running sensitivity analysis")
     parameters = ModelParameters(
         alpha_I=ALPHA_I,
         alpha_F=ALPHA_F,
