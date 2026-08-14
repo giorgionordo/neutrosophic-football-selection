@@ -2,12 +2,8 @@
 compare_mcdm.py
 
 Reproducible player-level comparison between the individual neutrosophic-soft
-score used by the football-team-selection framework and four MCDM benchmarks:
-
-    * AHP-style quantitative ratings;
-    * classical TOPSIS;
-    * classical VIKOR;
-    * single-valued neutrosophic TOPSIS.
+score used by the football-team-selection framework and several MCDM
+benchmarks.
 
 The comparison is deliberately performed WITHIN each player's official role,
 because data/weights.csv contains role-specific criterion weights. Phil Foden
@@ -16,11 +12,49 @@ role, even though he is also eligible as a forward in the team optimizer.
 
 The reference ranking is the raw role-specific NOS already defined by the main
 model:
+
     NOS_i^k = sum_j w_j^k (T_ij - alpha_I I_ij - alpha_F F_ij).
+
+The numerical benchmarks are:
+
+    * a weighted-sum T score, retained only as a diagnostic AHP-style rating
+      proxy (NOT claimed to be a full AHP calculation, because the case-study
+      data contain neither pairwise AHP judgments nor an externally calibrated
+      absolute-rating scale);
+    * classical TOPSIS on the T components;
+    * classical VIKOR on the T components;
+    * single-valued neutrosophic TOPSIS (SVNS-TOPSIS) using relative positive
+      and negative ideal triples and role-weighted normalized Euclidean
+      distances.
 
 Spearman's rho measures agreement between each benchmark ranking and the
 reference NOS ranking. It does not compare the benchmark methods with the
 team-level TSF optimizer.
+
+Methodological notes
+--------------------
+TOPSIS follows the classical vector-normalized formulation. VIKOR uses the
+standard S/R/Q compromise construction with v=0.5 by default. The SVNS-TOPSIS
+implementation follows the common relative-ideal formulation:
+
+    b_j^+ = (max_i T_ij, min_i I_ij, min_i F_ij)
+    b_j^- = (min_i T_ij, max_i I_ij, max_i F_ij)
+
+with per-criterion normalized Euclidean distance
+
+    d_NE(a,b) = sqrt(((dT)^2 + (dI)^2 + (dF)^2) / 3)
+
+and role-weighted separations
+
+    D_i^+ = sum_j w_j d_NE(x_ij, b_j^+)
+    D_i^- = sum_j w_j d_NE(x_ij, b_j^-),
+
+followed by the TOPSIS closeness coefficient
+
+    C_i = D_i^- / (D_i^+ + D_i^-).
+
+This keeps the role weights supplied by the case study fixed rather than
+estimating a new objective weight vector inside the benchmark.
 
 No third-party packages are required.
 """
@@ -52,6 +86,10 @@ DEFAULT_OUTPUT_DIR = BASE_DIR / "output"
 
 MethodScores = Dict[str, float]
 
+
+# ---------------------------------------------------------------------------
+# Ranking and correlation helpers
+# ---------------------------------------------------------------------------
 
 def average_ranks(
     values: Mapping[str, float],
@@ -85,6 +123,7 @@ def average_ranks(
         ):
             end += 1
 
+        # Positions start+1, ..., end (inclusive in rank numbering).
         average = ((start + 1) + end) / 2.0
         for index in range(start, end):
             ranks[ordered[index][0]] = average
@@ -94,7 +133,7 @@ def average_ranks(
 
 
 def pearson_correlation(x: Sequence[float], y: Sequence[float]) -> float:
-    """Pearson correlation, used here on rank vectors to obtain Spearman rho."""
+    """Pearson correlation, used on rank vectors to obtain Spearman rho."""
     if len(x) != len(y):
         raise ValueError("x and y must have the same length")
     if len(x) < 2:
@@ -102,9 +141,9 @@ def pearson_correlation(x: Sequence[float], y: Sequence[float]) -> float:
 
     mean_x = sum(x) / len(x)
     mean_y = sum(y) / len(y)
-
     dx = [value - mean_x for value in x]
     dy = [value - mean_y for value in y]
+
     denominator = math.sqrt(
         sum(value * value for value in dx)
         * sum(value * value for value in dy)
@@ -130,16 +169,21 @@ def spearman_from_ranks(
     )
 
 
-def ahp_ratings_scores(
+# ---------------------------------------------------------------------------
+# Benchmark scoring methods
+# ---------------------------------------------------------------------------
+
+def weighted_sum_t_scores(
     player_codes: Sequence[str],
     matrix: Mapping[str, Sequence[Triple]],
     weights: Sequence[float],
 ) -> MethodScores:
-    """Quantitative AHP-ratings benchmark using T as local criterion priorities.
+    """Weighted sum of T components.
 
-    The criterion weights are the role-specific weights already supplied by the
-    case study. This is intentionally a ratings-mode benchmark; it does not
-    invent pairwise player-judgment matrices that are absent from the data.
+    This is retained as a transparent diagnostic AHP-style ratings proxy. It is
+    deliberately NOT labelled a full AHP result because no pairwise AHP
+    judgments and no externally calibrated absolute-rating standards are
+    available in the frozen case-study data.
     """
     return {
         code: sum(
@@ -155,23 +199,24 @@ def topsis_scores(
     matrix: Mapping[str, Sequence[Triple]],
     weights: Sequence[float],
 ) -> MethodScores:
-    """Classical TOPSIS on T components, with vector normalization.
+    """Classical TOPSIS on T components with vector normalization.
 
-    All criteria are benefit criteria because T is already constructed so that
-    larger values mean better criterion satisfaction.
+    All criteria are benefit criteria because T is constructed so that a larger
+    value means stronger satisfaction of the corresponding criterion.
     """
     n_criteria = len(weights)
     if n_criteria == 0:
         raise ValueError("At least one criterion is required")
 
-    denominators = []
+    denominators: List[float] = []
     for j in range(n_criteria):
-        denominator = math.sqrt(sum(matrix[code][j][0] ** 2 for code in player_codes))
-        denominators.append(denominator)
+        denominators.append(
+            math.sqrt(sum(matrix[code][j][0] ** 2 for code in player_codes))
+        )
 
     weighted: Dict[str, List[float]] = {}
     for code in player_codes:
-        row = []
+        row: List[float] = []
         for j, weight in enumerate(weights):
             denominator = denominators[j]
             normalized = matrix[code][j][0] / denominator if denominator > 0 else 0.0
@@ -216,6 +261,9 @@ def vikor_scores(
         raise ValueError("VIKOR v must lie in [0,1]")
 
     n_criteria = len(weights)
+    if n_criteria == 0:
+        raise ValueError("At least one criterion is required")
+
     best = [
         max(matrix[code][j][0] for code in player_codes)
         for j in range(n_criteria)
@@ -232,10 +280,11 @@ def vikor_scores(
         terms: List[float] = []
         for j, weight in enumerate(weights):
             spread = best[j] - worst[j]
-            if spread <= 0:
-                term = 0.0
-            else:
-                term = weight * (best[j] - matrix[code][j][0]) / spread
+            term = (
+                weight * (best[j] - matrix[code][j][0]) / spread
+                if spread > 0
+                else 0.0
+            )
             terms.append(term)
 
         s_values[code] = sum(terms)
@@ -263,24 +312,33 @@ def vikor_scores(
     return scores
 
 
+def normalized_euclidean_triple(a: Triple, b: Triple) -> float:
+    """Normalized Euclidean distance between two single-valued NS triples."""
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)) / 3.0)
+
+
 def neutrosophic_topsis_scores(
     player_codes: Sequence[str],
     matrix: Mapping[str, Sequence[Triple]],
     weights: Sequence[float],
 ) -> MethodScores:
-    """Single-valued neutrosophic TOPSIS with weighted Euclidean distance.
+    """Single-valued neutrosophic TOPSIS with relative ideal triples.
 
-    For each criterion j, the positive ideal is
-        (max T_ij, min I_ij, min F_ij)
-    and the negative ideal is
-        (min T_ij, max I_ij, max F_ij).
+    For each criterion j:
+        b_j^+ = (max T_ij, min I_ij, min F_ij)
+        b_j^- = (min T_ij, max I_ij, max F_ij)
 
-    The distance uses the role-specific criterion weights:
-        d(A,B) = sqrt((1/3) * sum_j w_j *
-                      [(T_A-T_B)^2 + (I_A-I_B)^2 + (F_A-F_B)^2]).
-    The closeness coefficient d_minus / (d_plus + d_minus) is ranked high-to-low.
+    Per-criterion normalized Euclidean distances are aggregated with the fixed
+    role-specific criterion weights:
+        D_i^+ = sum_j w_j d_NE(x_ij, b_j^+)
+        D_i^- = sum_j w_j d_NE(x_ij, b_j^-)
+
+    The closeness coefficient D_i^- / (D_i^+ + D_i^-) is ranked high-to-low.
     """
     n_criteria = len(weights)
+    if n_criteria == 0:
+        raise ValueError("At least one criterion is required")
+
     positive: List[Triple] = []
     negative: List[Triple] = []
 
@@ -292,30 +350,32 @@ def neutrosophic_topsis_scores(
         positive.append((max(t_values), min(i_values), min(f_values)))
         negative.append((min(t_values), max(i_values), max(f_values)))
 
-    def distance(code: str, ideal: Sequence[Triple]) -> float:
-        total = 0.0
-        for weight, actual, target in zip(weights, matrix[code], ideal):
-            total += weight * sum(
-                (a - b) ** 2
-                for a, b in zip(actual, target)
-            )
-        return math.sqrt(total / 3.0)
-
     scores: MethodScores = {}
     for code in player_codes:
-        d_plus = distance(code, positive)
-        d_minus = distance(code, negative)
+        d_plus = sum(
+            weight * normalized_euclidean_triple(actual, target)
+            for weight, actual, target in zip(weights, matrix[code], positive)
+        )
+        d_minus = sum(
+            weight * normalized_euclidean_triple(actual, target)
+            for weight, actual, target in zip(weights, matrix[code], negative)
+        )
         total = d_plus + d_minus
         scores[code] = d_minus / total if total > 0 else 0.5
 
     return scores
 
 
+# ---------------------------------------------------------------------------
+# Role grouping and output
+# ---------------------------------------------------------------------------
+
 def role_player_codes(
     players: Mapping[str, Player],
     role: str,
 ) -> List[str]:
     """Official-role candidates, sorted deterministically by player index."""
+
     def player_key(code: str) -> Tuple[int, str]:
         if code.startswith("P") and code[1:].isdigit():
             return int(code[1:]), code
@@ -342,8 +402,8 @@ def write_player_rankings(
         "name",
         "reference_nos",
         "reference_rank",
-        "ahp_ratings_score",
-        "ahp_rank",
+        "weighted_sum_t_score",
+        "weighted_sum_t_rank",
         "topsis_score",
         "topsis_rank",
         "vikor_q",
@@ -363,7 +423,13 @@ def write_spearman(
     rows: Iterable[Mapping[str, object]],
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["role", "n_players", "method", "spearman_vs_reference"]
+    fieldnames = [
+        "role",
+        "n_players",
+        "method",
+        "status",
+        "spearman_vs_reference",
+    ]
 
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -400,13 +466,13 @@ def run_comparison(
             code: raw_nos(matrix[code], role_weights, alpha_i, alpha_f)
             for code in codes
         }
-        ahp = ahp_ratings_scores(codes, matrix, role_weights)
+        weighted_sum = weighted_sum_t_scores(codes, matrix, role_weights)
         topsis = topsis_scores(codes, matrix, role_weights)
         vikor = vikor_scores(codes, matrix, role_weights, v=vikor_v)
         neutro_topsis = neutrosophic_topsis_scores(codes, matrix, role_weights)
 
         reference_rank = average_ranks(reference, higher_is_better=True)
-        ahp_rank = average_ranks(ahp, higher_is_better=True)
+        weighted_sum_rank = average_ranks(weighted_sum, higher_is_better=True)
         topsis_rank = average_ranks(topsis, higher_is_better=True)
         vikor_rank = average_ranks(vikor, higher_is_better=False)
         neutro_topsis_rank = average_ranks(neutro_topsis, higher_is_better=True)
@@ -419,8 +485,8 @@ def run_comparison(
                     "name": players[code].name,
                     "reference_nos": f"{reference[code]:.9f}",
                     "reference_rank": f"{reference_rank[code]:.6f}",
-                    "ahp_ratings_score": f"{ahp[code]:.9f}",
-                    "ahp_rank": f"{ahp_rank[code]:.6f}",
+                    "weighted_sum_t_score": f"{weighted_sum[code]:.9f}",
+                    "weighted_sum_t_rank": f"{weighted_sum_rank[code]:.6f}",
                     "topsis_score": f"{topsis[code]:.9f}",
                     "topsis_rank": f"{topsis_rank[code]:.6f}",
                     "vikor_q": f"{vikor[code]:.9f}",
@@ -431,18 +497,24 @@ def run_comparison(
             )
 
         method_ranks = [
-            ("AHP-ratings", ahp_rank),
-            ("TOPSIS", topsis_rank),
-            ("VIKOR", vikor_rank),
-            ("Neutrosophic TOPSIS", neutro_topsis_rank),
+            (
+                "Weighted-sum T (AHP-style proxy)",
+                "diagnostic proxy; not a full AHP calculation",
+                weighted_sum_rank,
+            ),
+            ("TOPSIS", "benchmark", topsis_rank),
+            ("VIKOR", "benchmark", vikor_rank),
+            ("Neutrosophic TOPSIS", "benchmark", neutro_topsis_rank),
         ]
-        for method, ranks in method_ranks:
+
+        for method, status, ranks in method_ranks:
             rho = spearman_from_ranks(reference_rank, ranks)
             spearman_rows.append(
                 {
                     "role": role,
                     "n_players": len(codes),
                     "method": method,
+                    "status": status,
                     "spearman_vs_reference": f"{rho:.9f}",
                 }
             )
@@ -453,12 +525,16 @@ def run_comparison(
     return ranking_rows, spearman_rows
 
 
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Compare role-specific player rankings from the individual "
-            "neutrosophic-soft score with AHP-ratings, TOPSIS, VIKOR, "
-            "and single-valued neutrosophic TOPSIS."
+            "neutrosophic-soft score with a weighted-sum diagnostic, TOPSIS, "
+            "VIKOR, and single-valued neutrosophic TOPSIS."
         )
     )
     parser.add_argument(
@@ -512,11 +588,13 @@ def main() -> None:
 
     print("Role-specific Spearman correlations vs. reference NOS")
     print("(G is reported for reproducibility but n=2 is too small for interpretation.)")
+    print("The weighted-sum T row is diagnostic and must not be reported as full AHP.")
     print()
+
     for row in spearman_rows:
         print(
             f"{row['role']:>1}  "
-            f"{row['method']:<22} "
+            f"{row['method']:<36} "
             f"n={row['n_players']:>2}  "
             f"rho={float(row['spearman_vs_reference']): .6f}"
         )
