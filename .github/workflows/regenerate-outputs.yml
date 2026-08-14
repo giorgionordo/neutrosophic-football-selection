@@ -1,0 +1,36 @@
+name: Regenerate reproducibility outputs
+
+on:
+  push:
+    paths:
+      - '.github/workflows/regenerate-outputs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reproduce case study
+        run: python run_case_study.py
+
+      - name: Commit regenerated outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/neutrosophic_matrix.csv data/interaction_matrix.csv output/sensitivity.csv output/selection_frequencies.csv
+          if git diff --cached --quiet; then
+            echo "No regenerated files changed."
+          else
+            git commit -m "Regenerate sensitivity analysis outputs"
+            git push
+          fi
