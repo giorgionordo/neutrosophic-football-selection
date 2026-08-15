@@ -4,7 +4,7 @@ Research code accompanying the paper
 
 > **A Novel Neutrosophic Over Soft Orbit Topological Framework for Football Team Selection under Uncertainty**
 
-This repository contains a reproducible Python implementation of the numerical football case study developed in the manuscript. The framework combines **neutrosophic-soft multi-criteria evaluation**, **orbit topology induced by a fixed player-interaction map**, **tactical compatibility**, **position-dependent weighting**, and **constrained 4-3-3 team optimization**.
+This repository contains a reproducible Python implementation of the numerical football case study developed in the manuscript. The framework combines **neutrosophic-soft multi-criteria evaluation**, **orbit topology induced by a fixed player-interaction map**, **tactical compatibility**, **position-dependent weighting**, **constrained 4-3-3 team optimization**, and a **role-specific MCDM/Spearman benchmark** for the player-level comparison reported in the paper.
 
 The numerical objects used in the case study are generated from frozen source data committed to the repository, so the reported experiment can be reproduced without manually copying values from tables in the paper.
 
@@ -35,6 +35,8 @@ The proposed framework uses two mathematically distinct but computationally conn
 These layers are combined in a team-level objective optimized under role and formation constraints.
 
 The case study considers **20 Manchester City players from the 2024-2025 Premier League season** and searches for a feasible **4-3-3 starting eleven**.
+
+The repository also contains a separate player-level benchmark used for the manuscript's MCDM comparison. It evaluates agreement between the role-specific individual neutrosophic-soft ranking and TOPSIS, VIKOR, and single-valued neutrosophic TOPSIS through Spearman's rank correlation.
 
 ---
 
@@ -209,7 +211,14 @@ TCI matrix + fixed orbit map phi
 Forward orbits + OTI diagnostics
         |
         v
-Role-specific normalized NOS
+Role-specific NOS / normalized NOS
+        |
+        +-----------------------------> Player-level MCDM benchmark
+        |                                  |
+        |                                  +--> TOPSIS
+        |                                  +--> VIKOR
+        |                                  +--> Neutrosophic TOPSIS
+        |                                  +--> Spearman rank agreement
         |
         v
 Feasible 4-3-3 assignments
@@ -226,6 +235,8 @@ Monte Carlo sensitivity analysis
         +--> per-replication diagnostics
         +--> player selection frequencies
 ```
+
+The MCDM comparison is deliberately a **player-level** benchmark. It does not replace or re-express the team-level TSF optimizer.
 
 ---
 
@@ -317,6 +328,54 @@ The command:
 - writes per-replication sensitivity diagnostics;
 - writes player selection frequencies.
 
+### Reproduce the MCDM/Spearman comparison
+
+The role-specific player-ranking comparison reported in the manuscript is reproduced with:
+
+```bash
+python compare_mcdm.py
+```
+
+The comparison is performed independently within each player's **official role**, because `data/weights.csv` contains role-specific criterion weights. The reference ranking is the raw role-specific neutrosophic-soft NOS ranking. Phil Foden (`P14`) is therefore treated as a midfielder in this benchmark, even though the team optimizer also permits him to be assigned as a forward.
+
+The script evaluates:
+
+- a weighted-sum $T$ diagnostic retained only as an **AHP-style proxy**;
+- classical TOPSIS on the $T$ components;
+- classical VIKOR on the $T$ components, with default $v=0.5$;
+- single-valued neutrosophic TOPSIS using the complete $(T,I,F)$ triples.
+
+The weighted-sum result is **not** presented as a full AHP benchmark, because the frozen case-study data contain neither pairwise AHP judgements nor an externally calibrated absolute-rating scale.
+
+Spearman's coefficient is calculated as the Pearson correlation of average rank vectors, so ties are handled explicitly. The goalkeeper group is retained in the machine-readable calculation for reproducibility, but its value is not interpreted in the manuscript because only two goalkeeper candidates are available.
+
+The script generates:
+
+```text
+output/mcdm_player_rankings.csv
+output/mcdm_spearman.csv
+```
+
+For the role classes reported in the manuscript, the reproduced Spearman coefficients versus NOS are:
+
+| Method | Defender D | Midfielder M | Forward F |
+|---|---:|---:|---:|
+| TOPSIS | 0.543 | 0.714 | 0.200 |
+| VIKOR | 0.371 | 0.595 | -0.800 |
+| Neutrosophic TOPSIS | 1.000 | 1.000 | 1.000 |
+
+The value `1.000` for Neutrosophic TOPSIS means that, for this frozen dataset, it induces the same within-role ordering as the individual NOS score. It does **not** imply equivalence with the complete proposed framework, which additionally uses tactical compatibility, orbit structure, role eligibility, and constrained team optimization.
+
+### Run the automated tests
+
+The complete reproducibility test suite is executed with:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The tests verify the main model invariants and reproduced optimum as well as the role-specific MCDM/Spearman values.
+
 ### Rebuild the raw input from the external source
 
 Data acquisition requires `kagglehub`:
@@ -367,12 +426,23 @@ Detailed results are stored in `output/sensitivity.csv`; player-level frequencie
 
 ---
 
+## MCDM and Spearman benchmark
+
+`compare_mcdm.py` is intentionally separated from the team optimizer. Its purpose is to make the manuscript's player-level MCDM comparison reproducible without claiming that TOPSIS, VIKOR, or Neutrosophic TOPSIS solve the same constrained team-assignment problem as the proposed TSF model.
+
+The comparison uses the same frozen neutrosophic matrix and the same role-specific criterion weights as the main case study. Ranking agreement is calculated within role, rather than across the full 20-player roster, because the criterion-weight vectors differ by position.
+
+The generated `output/mcdm_player_rankings.csv` contains the underlying scores and ranks for every candidate and method. `output/mcdm_spearman.csv` contains the corresponding role-specific Spearman coefficients. These two files are regenerated whenever `python compare_mcdm.py` is run.
+
+---
+
 ## Repository structure
 
 ```text
 .
 ├── README.md
 ├── CITATION.cff
+├── LICENSE
 ├── requirements.txt
 ├── requirements-data.txt
 ├── run_case_study.py
@@ -380,32 +450,46 @@ Detailed results are stored in `output/sensitivity.csv`; player-level frequencie
 ├── build_interaction_matrix.py
 ├── download_fbref_data.py
 ├── football_team_selection.py
+├── compare_mcdm.py
 ├── DATA_PROVENANCE.md
 ├── DATA_SOURCES.md
 ├── CASE_STUDY_RESULTS.md
+├── RELEASE_NOTES.md
 ├── data/
 │   ├── players.csv
 │   ├── weights.csv
 │   ├── criteria_definition.csv
 │   ├── raw_player_metrics.csv
 │   ├── physical_metrics.csv
+│   ├── physical_metrics_verified_partial.csv
 │   ├── neutrosophic_matrix.csv
-│   └── interaction_matrix.csv
+│   ├── neutrosophic_matrix_template.csv
+│   ├── interaction_matrix.csv
+│   ├── interaction_matrix_template.csv
+│   └── raw_player_metrics_template.csv
+├── tests/
+│   ├── test_model.py
+│   └── test_mcdm.py
 └── output/
     ├── player_scores.csv
     ├── orbits.csv
     ├── optimal_starting_xi.csv
     ├── sensitivity.csv
-    └── selection_frequencies.csv
+    ├── selection_frequencies.csv
+    ├── mcdm_player_rankings.csv      # generated by compare_mcdm.py
+    └── mcdm_spearman.csv             # generated by compare_mcdm.py
 ```
 
 ### Main files
 
-- `run_case_study.py` — one-command reproduction of the complete numerical experiment.
+- `run_case_study.py` — one-command reproduction of the complete numerical case study.
 - `build_neutrosophic_matrix.py` — converts frozen raw player data into the $(T,I,F)$ evaluation matrix.
 - `build_interaction_matrix.py` — constructs the directed passing-role interaction potential.
 - `football_team_selection.py` — implements scores, tactical compatibility, orbit structure, feasibility, optimization and sensitivity analysis.
+- `compare_mcdm.py` — reproduces the role-specific player-level MCDM benchmark and Spearman rank-agreement analysis used in the manuscript.
 - `download_fbref_data.py` — optional reconstruction of the raw input from the FBref-derived Kaggle dataset.
+- `tests/test_model.py` — automated reproducibility tests for the core football-selection model, including weights, interaction/orbit invariants, the baseline optimum and selection-frequency calculations.
+- `tests/test_mcdm.py` — automated tests that reproduce the role-specific Spearman coefficients and verify that the weighted-sum diagnostic is explicitly marked as a proxy rather than a full AHP implementation.
 - `data/raw_player_metrics.csv` — frozen Manchester City Premier League 2024-25 case-study input.
 - `data/neutrosophic_matrix.csv` — generated $20\times12$ neutrosophic matrix.
 - `data/interaction_matrix.csv` — generated $20\times20$ directed interaction matrix with unit diagonal.
@@ -414,9 +498,13 @@ Detailed results are stored in `output/sensitivity.csv`; player-level frequencie
 - `output/optimal_starting_xi.csv` — maximizing feasible 4-3-3 assignment.
 - `output/sensitivity.csv` — per-replication Monte Carlo robustness diagnostics.
 - `output/selection_frequencies.csv` — player selection counts and frequencies.
+- `output/mcdm_player_rankings.csv` — generated role-specific NOS and MCDM scores/ranks for the player-level comparison.
+- `output/mcdm_spearman.csv` — generated role-specific Spearman correlations versus the reference NOS ranking.
 - `DATA_PROVENANCE.md` — data definitions, transformations and provenance.
 - `DATA_SOURCES.md` — source-acquisition workflow.
-- `CASE_STUDY_RESULTS.md` — compact numerical summary of the reproduced experiment.
+- `CASE_STUDY_RESULTS.md` — compact numerical summary of the reproduced team-selection experiment.
+- `CITATION.cff` — machine-readable software and preferred-paper citation metadata.
+- `LICENSE` — MIT software license.
 
 ---
 
@@ -432,7 +520,11 @@ The repository is designed to make the numerical study auditable and reproducibl
 - unavailable tracking evidence is represented through indeterminacy;
 - the exhaustive search reports the actual number of feasible assignments;
 - sensitivity perturbations use a fixed random seed;
-- both per-replication diagnostics and player selection frequencies are exported.
+- both per-replication diagnostics and player selection frequencies are exported;
+- MCDM comparisons are computed within official role classes to respect role-specific criterion weights;
+- the AHP-style weighted-sum diagnostic is explicitly distinguished from a full AHP implementation;
+- Spearman coefficients are generated from the underlying rank vectors rather than entered manually;
+- automated tests freeze the principal numerical results used by the manuscript.
 
 ---
 
@@ -449,6 +541,8 @@ The principal computational costs are approximately:
 
 The combinatorial search over feasible formations is therefore the dominant term for larger candidate pools.
 
+The MCDM benchmark operates only on the fixed player candidate set and is computationally negligible relative to the exhaustive team search in the present case study.
+
 ---
 
 ## Interpretation and scope
@@ -457,7 +551,9 @@ This project is a **mathematically structured decision-support framework**, not 
 
 The current numerical experiment is deliberately limited to one professional squad, twelve predefined criteria, season-aggregated data, a fixed tactical-interaction construction and a fixed 4-3-3 formation.
 
-Potential extensions include opponent-specific constraints, rolling or match-specific data, GPS and positional tracking, expected-goals variables, fatigue indicators, substitutions, formation changes, ablation studies and richer dynamical/topological analysis of the interaction map.
+The MCDM/Spearman values measure **within-role agreement between player-level rankings**. They are not measures of predictive accuracy and do not establish superiority of one decision method over another. In particular, the team-level TSF has a different final output from the ranking methods because it solves a constrained team-assignment problem.
+
+Potential extensions include opponent-specific constraints, rolling or match-specific data, high-frequency spatiotemporal player-tracking data, expected-goals variables, fatigue indicators, substitutions, formation changes, ablation studies and richer dynamical/topological analysis of the interaction map.
 
 ---
 
